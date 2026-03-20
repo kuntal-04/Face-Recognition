@@ -1,0 +1,43 @@
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# Environment variables (contains sensitive config)
+.env
+
+# DeepFace model weights (auto-downloaded, no need to push ~500MB)
+.deepface/
+deepface/weights/
+
+# OpenCV / ML cache
+*.h5
+*.hdf5
+*.pkl
+*.onnx
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs
+*.log
+logs/
+
+# Test images (don't push personal face photos to git)
+test_images/
+sample_images/
+*.jpg
+*.jpeg
+*.png

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Face Verification — Test Client</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0f11; --surface: #16181c; --surface2: #1e2026;
+    --border: rgba(255,255,255,0.08); --border-active: rgba(255,255,255,0.2);
+    --text: #f0f0f0; --muted: #7a7d85; --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12); --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.12); --info: #60a5fa;
+    --mono: 'DM Mono', monospace; --sans: 'Sora', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; padding: 40px 20px; }
+  .container { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 40px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; }
+  header p { color: var(--muted); font-size: 13px; }
+  .api-bar { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 32px; }
+  .api-bar label { color: var(--muted); font-size: 12px; font-family: var(--mono); white-space: nowrap; }
+  .api-bar input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 13px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .status-dot.live { background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .steps { display: flex; flex-direction: column; gap: 24px; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color 0.2s; }
+  .step.active { border-color: var(--border-active); }
+  .step-header { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-active); display: flex; align-items: center; justify-content: center; font-size: 12px; font-family: var(--mono); color: var(--muted); flex-shrink: 0; }
+  .step.active .step-num { border-color: var(--accent); color: var(--accent); }
+  .step.done .step-num { background: var(--accent); border-color: var(--accent); color: #000; }
+  .step-title { font-weight: 500; font-size: 14px; }
+  .step-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .step-body { padding: 20px; }
+  .upload-zone { border: 1px dashed var(--border-active); border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+  .upload-zone:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.3); }
+  .upload-zone input { display: none; }
+  .upload-zone .uz-icon { width: 36px; height: 36px; border: 1px solid var(--border-active); border-radius: 8px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; }
+  .upload-zone p { color: var(--muted); font-size: 13px; }
+  .upload-zone span { color: var(--text); font-weight: 500; }
+  .preview-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .preview-item { position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-item .remove-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; color: #fff; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .img-count { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .img-count span { color: var(--accent); font-family: var(--mono); }
+  .camera-wrap { border-radius: 10px; overflow: hidden; background: #000; position: relative; margin-bottom: 14px; }
+  #camera-feed { width: 100%; max-height: 320px; object-fit: cover; display: block; }
+  .camera-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 220px; border: 2px solid rgba(74,222,128,0.5); border-radius: 50%; pointer-events: none; }
+  .camera-hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,0.6); font-family: var(--mono); }
+  .angle-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .angle-pill { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-family: var(--mono); transition: all 0.2s; }
+  .angle-pill.captured { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .angle-pill.current { border-color: var(--info); color: var(--info); background: rgba(96,165,250,0.1); animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .cam-controls { display: flex; gap: 10px; align-items: center; }
+  .btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-active); background: transparent; color: var(--text); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn:hover { background: rgba(255,255,255,0.06); }
+  .btn:active { transform: scale(0.98); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.primary:hover { background: #22c55e; }
+  .btn.danger-btn { border-color: var(--danger); color: var(--danger); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .submit-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .submit-status { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .result-box { border-radius: 12px; padding: 24px; border: 1px solid var(--border); margin-top: 24px; display: none; }
+  .result-box.verified { border-color: var(--accent); background: var(--accent-dim); }
+  .result-box.rejected { border-color: var(--danger); background: var(--danger-dim); }
+  .result-verdict { font-size: 28px; font-weight: 600; letter-spacing: -1px; margin-bottom: 6px; }
+  .result-box.verified .result-verdict { color: var(--accent); }
+  .result-box.rejected .result-verdict { color: var(--danger); }
+  .result-msg { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 12px 14px; }
+  .stat-label { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 600; font-family: var(--mono); }
+  .pairs-title { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; }
+  .pair-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 12px; font-family: var(--mono); }
+  .pair-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .pair-badge.match { background: var(--accent-dim); color: var(--accent); }
+  .pair-badge.no-match { background: var(--danger-dim); color: var(--danger); }
+  .pair-info { color: var(--muted); flex: 1; }
+  .pair-score { color: var(--text); margin-left: auto; }
+  .loading-bar { height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 14px; display: none; }
+  .loading-bar.show { display: block; }
+  .loading-bar-inner { height: 100%; background: var(--accent); width: 0%; animation: load 2.5s ease-in-out infinite; }
+  @keyframes load { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+  .error-box { background: var(--danger-dim); border: 1px solid var(--danger); border-radius: 10px; padding: 14px 16px; font-size: 13px; color: var(--danger); margin-top: 14px; display: none; font-family: var(--mono); }
+  canvas#snap-canvas { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Face Verification — Test Client</h1>
+    <p>Simulates the full dating app verification flow: gallery upload → camera selfies → API result</p>
+  </header>
+  <div class="api-bar">
+    <label>API</label>
+    <input type="text" id="api-url" value="http://localhost:8000/api/v1/verify"/>
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+  <div class="steps">
+    <div class="step active" id="step1">
+      <div class="step-header">
+        <div class="step-num" id="num1">1</div>
+        <div>
+          <div class="step-title">Upload reference images</div>
+          <div class="step-sub">Pick 1–2 clear face photos from your device (JPG / PNG)</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="upload-zone" id="ref-zone" onclick="document.getElementById('ref-input').click()">
+          <input type="file" id="ref-input" accept="image/jpeg,image/png" multiple/>
+          <div class="uz-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+          </div>
+          <p><span>Click to upload</span> or drag & drop</p>
+          <p style="margin-top:4px">Max 2 images · JPG / PNG</p>
+        </div>
+        <div class="preview-grid" id="ref-preview"></div>
+        <p class="img-count" id="ref-count" style="display:none">
+          <span id="ref-num">0</span> / 2 reference images selected
+        </p>
+      </div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-header">
+        <div class="step-num" id="num2">2</div>
+        <div>
+          <div class="step-title">Capture selfies</div>
+          <div class="step-sub">Take 4–5 photos at different face angles using your camera</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="angle-pills" id="angle-pills">
+          <div class="angle-pill current" data-angle="0">front</div>
+          <div class="angle-pill" data-angle="1">left</div>
+          <div class="angle-pill" data-angle="2">right</div>
+          <div class="angle-pill" data-angle="3">smile</div>
+        </div>
+        <div class="camera-wrap" id="camera-wrap" style="display:none">
+          <video id="camera-feed" autoplay playsinline muted></video>
+          <div class="camera-overlay"></div>
+          <div class="camera-hint" id="camera-hint">align your face · front</div>
+        </div>
+        <canvas id="snap-canvas"></canvas>
+        <div class="preview-grid" id="selfie-preview"></div>
+        <p class="img-count" id="selfie-count" style="display:none">
+          <span id="selfie-num">0</span> / 4 selfies captured
+        </p>
+        <div class="cam-controls" style="margin-top:14px">
+          <button class="btn" id="start-cam-btn" onclick="startCamera()">Start camera</button>
+          <button class="btn primary" id="snap-btn" onclick="captureSnap()" style="display:none">Capture</button>
+          <button class="btn danger-btn" id="stop-cam-btn" onclick="stopCamera()" style="display:none">Stop camera</button>
+        </div>
+      </div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-header">
+        <div class="step-num" id="num3">3</div>
+        <div>
+          <div class="step-title">Run verification</div>
+          <div class="step-sub">Send all images to the API and get the result</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="submit-row">
+          <button class="btn primary" id="verify-btn" onclick="runVerification()">Verify identity</button>
+          <button class="btn" onclick="resetAll()">Reset</button>
+          <span class="submit-status" id="submit-status"></span>
+        </div>
+        <div class="loading-bar" id="loading-bar"><div class="loading-bar-inner"></div></div>
+        <div class="error-box" id="error-box"></div>
+        <div class="result-box" id="result-box">
+          <div class="result-verdict" id="result-verdict"></div>
+          <div class="result-msg" id="result-msg"></div>
+          <div class="result-stats">
+            <div class="stat-card"><div class="stat-label">confidence</div><div class="stat-value" id="stat-confidence">—</div></div>
+            <div class="stat-card"><div class="stat-label">matched pairs</div><div class="stat-value" id="stat-pairs">—</div></div>
+            <div class="stat-card"><div class="stat-label">match ratio</div><div class="stat-value" id="stat-ratio">—</div></div>
+          </div>
+          <div class="pairs-title">pair breakdown</div>
+          <div id="pair-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const ANGLES = ['front','left','right', 'smile'];
+let refFiles = [], selfieBlobs = [], stream = null, currentAngle = 0;
+
+document.getElementById('ref-input').addEventListener('change', function(e) {
+  refFiles = Array.from(e.target.files).slice(0, 2);
+  renderRefPreviews(); updateStepStates();
+});
+
+function renderRefPreviews() {
+  const grid = document.getElementById('ref-preview');
+  grid.innerHTML = '';
+  refFiles.forEach((f, i) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<img src="${URL.createObjectURL(f)}"/><button class="remove-btn" onclick="removeRef(${i})">✕</button>`;
+    grid.appendChild(item);
+  });
+  document.getElementById('ref-count').style.display = refFiles.length ? 'block' : 'none';
+  document.getElementById('ref-num').textContent = refFiles.length;
+}
+
+function removeRef(i) { refFiles.splice(i,1); renderRefPreviews(); updateStepStates(); }
+
+const refZone = document.getElementById('ref-zone');
+refZone.addEventListener('dragover', e => { e.preventDefault(); refZone.style.background='rgba(255,255,255,0.05)'; });
+refZone.addEventListener('dragleave', () => { refZone.style.background=''; });
+refZone.addEventListener('drop', e => {
+  e.preventDefault(); refZone.style.background='';
+  refFiles = Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).slice(0,2);
+  renderRefPreviews(); updateStepStates();
+});
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    document.getElementById('camera-feed').srcObject = stream;
+    document.getElementById('camera-wrap').style.display = 'block';
+    document.getElementById('start-cam-btn').style.display = 'none';
+    document.getElementById('snap-btn').style.display = 'inline-flex';
+    document.getElementById('stop-cam-btn').style.display = 'inline-flex';
+    updateAnglePills();
+    document.getElementById('status-dot').className = 'status-dot live';
+  } catch(err) { showError('Camera access denied. Please allow camera permission and try again.'); }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  document.getElementById('camera-wrap').style.display='none';
+  document.getElementById('start-cam-btn').style.display='inline-flex';
+  document.getElementById('snap-btn').style.display='none';
+  document.getElementById('stop-cam-btn').style.display='none';
+  document.getElementById('status-dot').className='status-dot';
+}
+
+function captureSnap() {
+  if (selfieBlobs.length >= 4) { showError('Maximum 4 selfies captured.'); return; }
+  const video = document.getElementById('camera-feed');
+  const canvas = document.getElementById('snap-canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(blob => {
+    selfieBlobs.push({ blob, angle: ANGLES[currentAngle] });
+    currentAngle = Math.min(currentAngle+1, ANGLES.length-1);
+    renderSelfiePreviews(); updateAnglePills(); updateStepStates();
+    if (selfieBlobs.length >= 4) stopCamera();
+  }, 'image/jpeg', 0.92);
+}
+
+function updateAnglePills() {
+  document.querySelectorAll('.angle-pill').forEach((pill, i) => {
+    pill.className = 'angle-pill';
+    if (i < selfieBlobs.length) pill.classList.add('captured');
+    else if (i === currentAngle && stream) pill.classList.add('current');
+  });
+  const hint = document.getElementById('camera-hint');
+  if (hint) hint.textContent = `align your face · ${ANGLES[currentAngle]||'done'}`;
+}
+
+function renderSelfiePreviews() {
+  const grid = document.getElementById('selfie-preview');
+  grid.innerHTML = '';
+  selfieBlobs.forEach((s,i) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<img src="${URL.createObjectURL(s.blob)}"/><button class="remove-btn" onclick="removeSelfie(${i})">✕</button><div style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 5px;border-radius:3px;font-family:var(--mono)">${s.angle}</div>`;
+    grid.appendChild(item);
+  });
+  document.getElementById('selfie-count').style.display = selfieBlobs.length ? 'block' : 'none';
+  document.getElementById('selfie-num').textContent = selfieBlobs.length;
+}
+
+function removeSelfie(i) { selfieBlobs.splice(i,1); currentAngle=Math.max(0,currentAngle-1); renderSelfiePreviews(); updateAnglePills(); updateStepStates(); }
+
+function updateStepStates() {
+  const hasRef = refFiles.length >= 1, hasSelfies = selfieBlobs.length >= 2;
+  document.getElementById('step1').className = 'step'+(hasRef?' done':' active');
+  document.getElementById('step2').className = 'step'+(hasSelfies?' done':hasRef?' active':'');
+  document.getElementById('step3').className = 'step'+(hasRef&&hasSelfies?' active':'');
+  document.getElementById('num1').textContent = hasRef ? '✓' : '1';
+  document.getElementById('num2').textContent = hasSelfies ? '✓' : '2';
+  document.getElementById('verify-btn').disabled = !(hasRef && hasSelfies);
+}
+
+async function runVerification() {
+  hideError();
+  document.getElementById('result-box').style.display='none';
+  document.getElementById('loading-bar').className='loading-bar show';
+  document.getElementById('submit-status').textContent='Sending to API...';
+  document.getElementById('verify-btn').disabled=true;
+  const apiUrl = document.getElementById('api-url').value.trim();
+  const formData = new FormData();
+  refFiles.forEach(f => formData.append('reference_images', f, f.name));
+  selfieBlobs.forEach((s,i) => formData.append('selfie_images', s.blob, `selfie_${s.angle}_${i}.jpg`));
+  try {
+    const res = await fetch(apiUrl, { method:'POST', body:formData });
+    const data = await res.json();
+    document.getElementById('loading-bar').className='loading-bar';
+    document.getElementById('submit-status').textContent='';
+    if (!res.ok) { showError(data.detail||JSON.stringify(data)); return; }
+    showResult(data);
+  } catch(err) {
+    document.getElementById('loading-bar').className='loading-bar';
+    document.getElementById('submit-status').textContent='';
+    showError(`Could not reach the API at "${apiUrl}". Make sure your FastAPI server is running on localhost:8000`);
+  } finally { document.getElementById('verify-btn').disabled=false; }
+}
+
+function showResult(data) {
+  const box = document.getElementById('result-box');
+  const isVerified = data.status==='verified';
+  box.className='result-box '+(isVerified?'verified':'rejected');
+  box.style.display='block';
+  document.getElementById('result-verdict').textContent = isVerified?'Identity verified':'Identity rejected';
+  document.getElementById('result-msg').textContent = data.message;
+  document.getElementById('stat-confidence').textContent = (data.confidence_score*100).toFixed(1)+'%';
+  document.getElementById('stat-pairs').textContent = `${data.matched_pairs} / ${data.total_pairs}`;
+  document.getElementById('stat-ratio').textContent = (data.match_ratio*100).toFixed(0)+'%';
+  const pairList = document.getElementById('pair-list');
+  pairList.innerHTML='';
+  data.pair_results.forEach(p => {
+    const row = document.createElement('div');
+    row.className='pair-row';
+    row.innerHTML=`<span class="pair-badge ${p.is_match?'match':'no-match'}">${p.is_match?'match':'no match'}</span><span class="pair-info">ref[${p.reference_index}] vs selfie[${p.selfie_index}]</span><span class="pair-score">${(p.confidence_score*100).toFixed(1)}% · dist ${p.distance.toFixed(3)}</span>`;
+    pairList.appendChild(row);
+  });
+  box.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function showError(msg) { const b=document.getElementById('error-box'); b.textContent='Error: '+msg; b.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+
+function resetAll() {
+  refFiles=[]; selfieBlobs=[]; currentAngle=0;
+  stopCamera(); renderRefPreviews(); renderSelfiePreviews(); updateAnglePills(); updateStepStates();
+  document.getElementById('result-box').style.display='none';
+  hideError();
+  document.getElementById('ref-input').value='';
+  document.getElementById('submit-status').textContent='';
+}
+
+updateStepStates();
+</script>
+</body>
+</html>
