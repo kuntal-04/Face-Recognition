@@ -101,7 +101,8 @@
   </header>
   <div class="api-bar">
     <label>API</label>
-    <input type="text" id="api-url" value="http://localhost:8000/api/v1/verify"/>
+    <input type="text" id="api-url" value="http://192.168.1.10:8000/api/v1/verify"/>
+    <!-- <input type="text" id="api-url" value="http://localhost:8000/api/v1/verify"/> -->
     <div class="status-dot" id="status-dot"></div>
   </div>
   <div class="steps">
@@ -306,6 +307,7 @@ async function runVerification() {
   const apiUrl = document.getElementById('api-url').value.trim();
   const formData = new FormData();
   refFiles.forEach(f => formData.append('reference_images', f, f.name));
+  console.log(refFiles,"refFiles")
   selfieBlobs.forEach((s,i) => formData.append('selfie_images', s.blob, `selfie_${s.angle}_${i}.jpg`));
   try {
     const res = await fetch(apiUrl, { method:'POST', body:formData });

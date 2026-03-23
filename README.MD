@@ -15,6 +15,7 @@ Compares reference photos against multiple selfie angles to confirm it's the sam
 - [Configuration](#configuration)
 - [Error Handling](#error-handling)
 - [App Flow](#app-flow)
+- [Mentor Integration Guide](#mentor-integration-guide)
 - [Tips for Better Accuracy](#tips-for-better-accuracy)
 
 ---
@@ -48,42 +49,129 @@ face_recognition_api/
 
 ## Local Setup
 
-### 1. Clone the repository
+### Step 1 — Check Python version
+
+This project requires **Python 3.10 or higher**. Check your version:
+
+```bash
+python --version
+```
+
+If you don't have Python 3.10+ installed, download and install Python 3.13 from the official site:
+
+```
+https://www.python.org/downloads/
+```
+
+After installing, verify it:
+
+```bash
+python --version
+# Should show: Python 3.13.x
+```
+
+> On some systems you may need to use `python3` instead of `python`.
+
+---
+
+### Step 2 — Clone the repository
 
 ```bash
 git clone <your-repo-url>
 cd face_recognition_api
 ```
 
-### 2. Create and activate virtual environment
+---
+
+### Step 3 — Create virtual environment
 
 ```bash
 # Windows
 python -m venv venv
+
+# Mac / Linux
+python3 -m venv venv
+```
+
+---
+
+### Step 4 — Activate virtual environment
+
+```bash
+# Windows
 venv\Scripts\activate
 
 # Mac / Linux
-python -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+You should see `(venv)` at the start of your terminal line after activation.
+
+---
+
+### Step 5 — Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-> First install will take a few minutes. TensorFlow is ~500MB.
-> The Facenet512 model weights (~90MB) will auto-download on the very first API request.
+> This will take a few minutes on first run. TensorFlow alone is ~500MB.
+> Make sure you have a stable internet connection.
 
-### 4. Run the server
+---
+
+### Step 6 — Run the server
 
 ```bash
 python main.py
 ```
 
-Server runs at: `http://localhost:8000`
-Interactive API docs: `http://localhost:8000/docs`
+You should see this output:
+
+```
+INFO:     Started server process
+INFO:     Waiting for application startup.
+🚀 Face Recognition API starting up...
+   Model: Facenet512
+   Detector: retinaface
+   Threshold: 0.4
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000
+```
+
+---
+
+### Step 7 — Verify it's running
+
+Open your browser and visit:
+
+```
+http://localhost:8000/health
+```
+
+You should see:
+
+```json
+{ "status": "healthy" }
+```
+
+Interactive API docs are available at:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+### Stopping the server
+
+Press `Ctrl + C` in the terminal to stop the server.
+
+### Restarting the server
+
+```bash
+python main.py
+```
 
 ---
 
@@ -216,6 +304,164 @@ Step 5 — App shows result to the user
 
 ---
 
+## Mentor Integration Guide
+
+Follow these steps to set up and run the API on a new system.
+
+### Step 1 — Prerequisites
+
+Make sure the following are installed on your system:
+
+| Tool | Minimum Version | Download |
+|------|----------------|----------|
+| Python | 3.10 or higher | https://www.python.org/downloads/ |
+| Git | Any | https://git-scm.com/downloads |
+| pip | Comes with Python | — |
+
+Verify Python is installed:
+
+```bash
+python --version
+```
+
+If Python is not installed or version is below 3.10, install Python 3.13:
+
+```bash
+# Windows — download installer from:
+https://www.python.org/downloads/release/python-3130/
+
+# Mac — using Homebrew
+brew install python@3.13
+
+# Ubuntu / Linux
+sudo apt update
+sudo apt install python3.13 python3.13-venv python3.13-pip
+```
+
+---
+
+### Step 2 — Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd face_recognition_api
+```
+
+---
+
+### Step 3 — Create and activate virtual environment
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+---
+
+### Step 4 — Install all dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+This installs everything automatically including FastAPI, DeepFace, RetinaFace, TensorFlow, and OpenCV.
+
+> First install takes 5–10 minutes depending on internet speed.
+> TensorFlow is ~500MB. Make sure you have at least 2GB of free disk space.
+
+---
+
+### Step 5 — Start the API server
+
+```bash
+python main.py
+```
+
+Expected output:
+
+```
+INFO:     Started server process
+INFO:     Waiting for application startup.
+🚀 Face Recognition API starting up...
+   Model: Facenet512
+   Detector: retinaface
+   Threshold: 0.4
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000
+```
+
+---
+
+### Step 6 — Test the API is working
+
+Open browser and visit:
+
+```
+http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{ "status": "healthy" }
+```
+
+Full interactive docs:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+### Step 7 — Call the API from your app
+
+The API accepts `multipart/form-data` POST requests. Here is the base URL:
+
+```
+http://localhost:8000/api/v1/verify
+```
+
+Send two fields:
+- `reference_images` — gallery photos selected by user (1–2 images)
+- `selfie_images` — selfies captured from camera (2–6 images)
+
+The API will return `verified` or `rejected` with a confidence score.
+
+---
+
+### Troubleshooting
+
+**Problem: `ModuleNotFoundError` for any package**
+```bash
+pip install -r requirements.txt
+```
+
+**Problem: Port 8000 already in use**
+```bash
+# Run on a different port
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+**Problem: First request is very slow (30–60 seconds)**
+
+This is normal. DeepFace downloads the Facenet512 model weights (~90MB) on the very first request. After that all requests are fast.
+
+**Problem: `No face detected` error (422)**
+
+The uploaded image does not have a clearly visible face. Ask the user to upload a clearer, well-lit photo where the face is visible.
+
+**Problem: Camera not working in test page**
+
+Open the test HTML file in Chrome or Edge. Firefox may block camera access for local files.
+
+---
+
 ## Tips for Better Accuracy
 
 - Reference photos should clearly show the face — avoid group photos or far-away shots
@@ -224,3 +470,5 @@ Step 5 — App shows result to the user
 - Good lighting matters — faces lit from the front perform best
 - Avoid backlighting (e.g. sitting in front of a bright window)
 - Minimum face size in any image should be at least 80×80 pixels for reliable detection
+- Glasses are handled automatically — the model works with or without glasses
+- Full body photos work fine — the API automatically crops the face region
