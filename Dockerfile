@@ -1,27 +1,32 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-# System dependencies required for OpenCV and RetinaFace
+# Prevent Python from writing .pyc files & enable logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install only required system deps (minimal)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    libxrender-dev \
-    gcc \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Set work directory
 WORKDIR /app
 
-# Copy and install Python dependencies first (for Docker cache efficiency)
+# Install Python dependencies first (better caching)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all project files
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
 COPY . .
 
-# Expose the API port
+# Expose port
 EXPOSE 8000
 
-# Start the FastAPI server
+# Run FastAPI
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

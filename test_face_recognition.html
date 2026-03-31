@@ -101,8 +101,8 @@
   </header>
   <div class="api-bar">
     <label>API</label>
-    <input type="text" id="api-url" value="http://192.168.1.10:8000/api/v1/verify"/>
-    <!-- <input type="text" id="api-url" value="http://localhost:8000/api/v1/verify"/> -->
+    <!-- <input type="text" id="api-url" value="http://192.168.1.10:8000/api/v1/verify"/> -->
+    <input type="text" id="api-url" value="http://localhost:8000/api/v1/verify"/>
     <div class="status-dot" id="status-dot"></div>
   </div>
   <div class="steps">
@@ -136,7 +136,7 @@
         <div class="step-num" id="num2">2</div>
         <div>
           <div class="step-title">Capture selfies</div>
-          <div class="step-sub">Take 4–5 photos at different face angles using your camera</div>
+          <div class="step-sub">Take 2–5 photos at different face angles using your camera</div>
         </div>
       </div>
       <div class="step-body">
@@ -145,6 +145,7 @@
           <div class="angle-pill" data-angle="1">left</div>
           <div class="angle-pill" data-angle="2">right</div>
           <div class="angle-pill" data-angle="3">smile</div>
+          <div class="angle-pill" data-angle="4">tilt up</div>
         </div>
         <div class="camera-wrap" id="camera-wrap" style="display:none">
           <video id="camera-feed" autoplay playsinline muted></video>
@@ -154,7 +155,7 @@
         <canvas id="snap-canvas"></canvas>
         <div class="preview-grid" id="selfie-preview"></div>
         <p class="img-count" id="selfie-count" style="display:none">
-          <span id="selfie-num">0</span> / 4 selfies captured
+          <span id="selfie-num">0</span> / 5 selfies captured
         </p>
         <div class="cam-controls" style="margin-top:14px">
           <button class="btn" id="start-cam-btn" onclick="startCamera()">Start camera</button>
@@ -195,7 +196,7 @@
   </div>
 </div>
 <script>
-const ANGLES = ['front','left','right', 'smile'];
+const ANGLES = ['front','left','right', 'smile', 'tilt up'];
 let refFiles = [], selfieBlobs = [], stream = null, currentAngle = 0;
 
 document.getElementById('ref-input').addEventListener('change', function(e) {
@@ -250,7 +251,7 @@ function stopCamera() {
 }
 
 function captureSnap() {
-  if (selfieBlobs.length >= 4) { showError('Maximum 4 selfies captured.'); return; }
+  if (selfieBlobs.length >= 5) { showError('Maximum 5 selfies captured.'); return; }
   const video = document.getElementById('camera-feed');
   const canvas = document.getElementById('snap-canvas');
   canvas.width = video.videoWidth; canvas.height = video.videoHeight;
@@ -259,7 +260,7 @@ function captureSnap() {
     selfieBlobs.push({ blob, angle: ANGLES[currentAngle] });
     currentAngle = Math.min(currentAngle+1, ANGLES.length-1);
     renderSelfiePreviews(); updateAnglePills(); updateStepStates();
-    if (selfieBlobs.length >= 4) stopCamera();
+    if (selfieBlobs.length >= 5) stopCamera();
   }, 'image/jpeg', 0.92);
 }
 

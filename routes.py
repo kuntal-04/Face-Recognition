@@ -26,10 +26,10 @@ router = APIRouter()
 Upload **1–2 reference images** and **2–5 selfie images** (JPG/PNG).
 
 The API will:
-1. Detect faces in every image using **RetinaFace**.
-2. Compute **Facenet512** embeddings for each face.
+1. Detect faces in every image using **InsightFace**.
+2. Compute **ArcFace** embeddings for each face.
 3. Compare all reference–selfie pairs via **cosine distance**.
-4. Return `verified` if ≥60% of pairs match, otherwise `rejected`.
+4. Return `verified` if ≥60% of pairs match (distance < 0.40), otherwise `rejected`.
     """,
 )
 async def verify_identity(

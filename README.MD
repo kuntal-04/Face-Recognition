@@ -1,7 +1,7 @@
 # Face Recognition API
 
 A FastAPI-based identity verification service for dating apps.
-Compares reference photos against multiple selfie angles to confirm it's the same person using **Facenet512** + **RetinaFace**.
+Compares reference photos against multiple selfie angles to confirm it's the same person using **Facenet** + **RetinaFace**.
 
 ---
 
@@ -41,7 +41,7 @@ face_recognition_api/
 |-----------|---------|
 | API Framework | FastAPI |
 | Face Detection | RetinaFace |
-| Face Recognition | DeepFace (Facenet512) |
+| Face Recognition | DeepFace (Facenet) |
 | Image Processing | OpenCV |
 | Distance Metric | Cosine similarity |
 
@@ -134,7 +134,7 @@ INFO:     Waiting for application startup.
 🚀 Face Recognition API starting up...
    Model: Facenet512
    Detector: retinaface
-   Threshold: 0.4
+   Threshold: 0.3
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
@@ -179,7 +179,7 @@ python main.py
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/verify` | Full verification — 1–2 reference images + 2–6 selfies |
+| POST | `/api/v1/verify` | Full verification — 1–2 reference images + 2–5 selfies |
 | POST | `/api/v1/verify/quick` | Quick 1-vs-1 face comparison |
 | GET | `/` | Service info |
 | GET | `/health` | Health check |
@@ -195,7 +195,7 @@ python main.py
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `reference_images` | File(s) | Yes | 1–2 reference photos (JPG/PNG, max 10MB each) |
-| `selfie_images` | File(s) | Yes | 2–6 selfie photos (JPG/PNG, max 10MB each) |
+| `selfie_images` | File(s) | Yes | 2–5 selfie photos (JPG/PNG, max 10MB each) |
 
 **Success Response — `200 OK`**
 
@@ -252,10 +252,10 @@ All settings are in `config.py` and can be overridden via a `.env` file.
 |----------|---------|-------------|
 | `RECOGNITION_MODEL` | `Facenet512` | Face embedding model |
 | `DETECTOR_BACKEND` | `retinaface` | Face detection backend |
-| `MATCH_THRESHOLD` | `0.40` | Cosine distance cutoff per pair (lower = stricter) |
-| `MIN_MATCH_RATIO` | `0.50` | Minimum % of pairs that must match for verified result |
+| `MATCH_THRESHOLD` | `0.30` | Cosine distance cutoff per pair (lower = stricter) |
+| `MIN_MATCH_RATIO` | `0.60` | Minimum % of pairs that must match for verified result |
 | `MAX_FILE_SIZE_MB` | `10` | Max image size per uploaded file |
-| `MAX_SELFIE_IMAGES` | `6` | Max number of selfie images allowed |
+| `MAX_SELFIE_IMAGES` | `5` | Max number of selfie images allowed |
 
 ---
 
@@ -285,7 +285,7 @@ This is the intended user flow for the dating app:
 ```
 Step 1 — User picks 1–2 photos from their device gallery
               ↓
-Step 2 — App opens camera, user captures 4–6 selfies
+Step 2 — App opens camera, user captures 2–5 selfies
          at different angles (front, left, right, up, down, smile)
               ↓
 Step 3 — App sends all images to POST /api/v1/verify
@@ -388,9 +388,9 @@ Expected output:
 INFO:     Started server process
 INFO:     Waiting for application startup.
 🚀 Face Recognition API starting up...
-   Model: Facenet512
+   Model: Facenet
    Detector: retinaface
-   Threshold: 0.4
+   Threshold: 0.3
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
@@ -429,7 +429,7 @@ http://localhost:8000/api/v1/verify
 
 Send two fields:
 - `reference_images` — gallery photos selected by user (1–2 images)
-- `selfie_images` — selfies captured from camera (2–6 images)
+- `selfie_images` — selfies captured from camera (2–5 images)
 
 The API will return `verified` or `rejected` with a confidence score.
 

@@ -10,8 +10,7 @@ from config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("🚀 Face Recognition API starting up...")
-    print(f"   Model: {settings.RECOGNITION_MODEL}")
-    print(f"   Detector: {settings.DETECTOR_BACKEND}")
+    print("   Model: InsightFace (buffalo_sc)")
     print(f"   Threshold: {settings.MATCH_THRESHOLD}")
     yield
     print("🛑 Face Recognition API shutting down...")
@@ -19,7 +18,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Face Recognition API",
-    description="Dating app face verification using Facenet512 + RetinaFace.",
+    description="Dating app face verification using InsightFace ArcFace.",
     version="1.0.0",
     lifespan=lifespan,
 )
