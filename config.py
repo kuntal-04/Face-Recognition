@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Cosine distance: lower = more similar (0 = identical, 1 = completely different)
     MATCH_THRESHOLD: float = 0.60                  # InsightFace calibrated threshold 
     # Minimum fraction of selfie angles that must match to pass
-    MIN_MATCH_RATIO: float = 0.40                  # ≥60% of pairs must match (as documented in API)
+    MIN_MATCH_RATIO: float = 0.50                  # ≥60% of pairs must match (as documented in API)
 
     # ── Image constraints ────────────────────────────────────────────
     MAX_FILE_SIZE_MB: int = 10
